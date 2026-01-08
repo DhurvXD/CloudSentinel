@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Environment variables (NEVER commit this!)
+.env
+
+# Database files
+database/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test files
+test_*.py
+*_test.py
+test_*.txt
+decrypted_*.txt
+bob_downloaded.txt
+test_secret_document.txt
+
+# Backup files
+*_old.py
+*.bak

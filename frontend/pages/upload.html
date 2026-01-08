@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File - CloudSentinel</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+                <span>CloudSentinel</span>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="upload.html" class="nav-link active">Upload</a>
+                <a href="files.html" class="nav-link">My Files</a>
+                <a href="audit.html" class="nav-link">Audit Logs</a>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="currentUsername"></span>
+                    <button class="btn btn-outline" onclick="logout()" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <div class="container" style="max-width: 800px;">
+            <!-- Upload Section -->
+            <section class="upload-section fade-in">
+                <h1>📤 Upload File</h1>
+                <p>Encrypt and upload your files securely to the cloud</p>
+
+                <div class="glass-card" style="margin-top: 2rem;">
+                    <form id="uploadForm">
+                        <!-- File Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Select File</label>
+                            <div class="file-drop-zone" id="dropZone">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <p>Drag & drop your file here</p>
+                                <p style="font-size: 0.875rem; color: var(--text-muted);">or</p>
+                                <button type="button" class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
+                                    Browse Files
+                                </button>
+                                <input type="file" id="fileInput" style="display: none;" required>
+                            </div>
+                            <div id="selectedFile" class="selected-file" style="display: none;">
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="font-size: 2rem;">📄</span>
+                                    <div style="flex: 1;">
+                                        <p id="fileName" style="margin: 0; font-weight: 600;"></p>
+                                        <p id="fileSize" style="margin: 0; font-size: 0.875rem; color: var(--text-muted);"></p>
+                                    </div>
+                                    <button type="button" class="btn btn-danger" onclick="clearFile()">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Encryption Password -->
+                        <div class="form-group">
+                            <label class="form-label" for="uploadPassword">Encryption Password</label>
+                            <div class="password-input-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="uploadPassword" 
+                                    class="form-input" 
+                                    placeholder="Enter a strong password to encrypt your file"
+                                    required
+                                    minlength="6"
+                                >
+                                <button type="button" class="password-toggle" onclick="togglePassword('uploadPassword')">
+                                    👁️
+                                </button>
+                            </div>
+                            <small style="color: var(--text-muted); font-size: 0.875rem;">
+                                This password will be required to decrypt and download the file. Keep it safe!
+                            </small>
+                        </div>
+
+                        <!-- Access Control Settings -->
+                        <div class="access-control-section">
+                            <h3 style="margin-bottom: 1rem; color: var(--accent-purple);">🔐 Access Control Settings</h3>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="allowedUsers">Allowed Users</label>
+                                <input 
+                                    type="text" 
+                                    id="allowedUsers" 
+                                    class="form-input" 
+                                    placeholder="username1, username2, username3"
+                                >
+                                <small style="color: var(--text-muted); font-size: 0.875rem;">
+                                    Comma-separated usernames. Leave empty to allow only yourself.
+                                </small>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="form-group">
+                                    <label class="form-label" for="accessStartTime">Access Start Time</label>
+                                    <input 
+                                        type="time" 
+                                        id="accessStartTime" 
+                                        class="form-input" 
+                                        value="09:00"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="accessEndTime">Access End Time</label>
+                                    <input 
+                                        type="time" 
+                                        id="accessEndTime" 
+                                        class="form-input" 
+                                        value="18:00"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="allowedRegions">Allowed Regions</label>
+                                <input 
+                                    type="text" 
+                                    id="allowedRegions" 
+                                    class="form-input" 
+                                    placeholder="IN, US, GB"
+                                    value="IN, US, GB"
+                                >
+                                <small style="color: var(--text-muted); font-size: 0.875rem;">
+                                    Country codes (ISO 3166-1 alpha-2). Example: IN, US, GB, CA
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Upload Status -->
+                        <div id="uploadStatus"></div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Encrypt & Upload
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/upload.js"></script>
+</body>
+</html>

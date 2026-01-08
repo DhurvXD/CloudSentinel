@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - CloudSentinel</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+                <span>CloudSentinel</span>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="upload.html" class="nav-link">Upload</a>
+                <a href="files.html" class="nav-link">My Files</a>
+                <a href="audit.html" class="nav-link active">Audit Logs</a>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="currentUsername"></span>
+                    <button class="btn btn-outline" onclick="logout()" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-main">
+        <div class="container">
+            <section class="audit-section fade-in">
+                <div class="section-header">
+                    <div>
+                        <h1>📋 Audit Logs</h1>
+                        <p>Complete activity history and security events</p>
+                    </div>
+                    <button class="btn btn-outline" onclick="loadActivity()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <div id="auditList" class="glass-card" style="margin-top: 2rem; padding: 0;">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Loading audit logs...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/dashboard.js"></script>
+    <script>
+        if (!requireAuth()) {}
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+            loadActivity();
+        });
+
+        function loadUserInfo() {
+            const user = getUser();
+            if (user) {
+                document.getElementById('currentUsername').textContent = user.username;
+            }
+        }
+
+        async function loadActivity() {
+            const auditList = document.getElementById('auditList');
+            auditList.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Loading audit logs...</p>
+                </div>
+            `;
+
+            try {
+                const result = await getMyActivity(100);
+                
+                if (result.status === 200 && result.data.success) {
+                    const logs = result.data.logs;
+                    
+                    if (logs.length === 0) {
+                        auditList.innerHTML = `
+                            <div class="empty-state">
+                                <p>No activity logs yet.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    auditList.innerHTML = '';
+                    logs.forEach(log => {
+                        const item = createActivityItem(log);
+                        auditList.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load audit logs:', error);
+                auditList.innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: #fa709a;">Failed to load audit logs. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                clearToken();
+                showNotification('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>

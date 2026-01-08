@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Files - CloudSentinel</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+                <span>CloudSentinel</span>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="upload.html" class="nav-link">Upload</a>
+                <a href="files.html" class="nav-link active">My Files</a>
+                <a href="audit.html" class="nav-link">Audit Logs</a>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="currentUsername"></span>
+                    <button class="btn btn-outline" onclick="logout()" style="margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-main">
+        <div class="container">
+            <section class="files-section fade-in">
+                <div class="section-header">
+                    <div>
+                        <h1>📂 My Files</h1>
+                        <p>Manage your encrypted files</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.location.href='upload.html'">
+                        📤 Upload New File
+                    </button>
+                </div>
+
+                <div id="filesList" class="glass-card" style="margin-top: 2rem; padding: 0;">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Loading files...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div id="downloadModal" class="modal hidden">
+        <div class="modal-content glass-card">
+            <h3>🔓 Decrypt & Download File</h3>
+            <p id="modalFileName" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+            
+            <div class="form-group">
+                <label class="form-label" for="downloadPassword">Enter Decryption Password</label>
+                <div class="password-input-wrapper">
+                    <input 
+                        type="password" 
+                        id="downloadPassword" 
+                        class="form-input" 
+                        placeholder="Enter the password you used to encrypt this file"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('downloadPassword')">
+                        👁️
+                    </button>
+                </div>
+            </div>
+
+            <div id="downloadStatus"></div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeDownloadModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="performDownload()">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        if (!requireAuth()) {}
+
+        let currentFileId = null;
+        let currentFileName = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+            loadFiles();
+        });
+
+        function loadUserInfo() {
+            const user = getUser();
+            if (user) {
+                document.getElementById('currentUsername').textContent = user.username;
+            }
+        }
+
+        async function loadFiles() {
+            const filesList = document.getElementById('filesList');
+            filesList.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Loading files...</p>
+                </div>
+            `;
+
+            try {
+                const result = await listMyFiles();
+                
+                if (result.status === 200 && result.data.success) {
+                    const files = Object.entries(result.data.files);
+                    
+                    if (files.length === 0) {
+                        filesList.innerHTML = `
+                            <div class="empty-state">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/>
+                                </svg>
+                                <p>No files yet. Upload your first file!</p>
+                                <button class="btn btn-primary" onclick="window.location.href='upload.html'" style="margin-top: 1rem;">
+                                    Upload File
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    filesList.innerHTML = '';
+                    files.forEach(([fileId, metadata]) => {
+                        const item = createFileItem(fileId, metadata);
+                        filesList.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load files:', error);
+                filesList.innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: #fa709a;">Failed to load files. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createFileItem(fileId, metadata) {
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <div class="activity-icon success">📄</div>
+                <div class="activity-details">
+                    <h4>${metadata.original_filename}</h4>
+                    <p>Uploaded: ${formatDate(metadata.uploaded_at)} | Allowed Users: ${metadata.allowed_users.join(', ')}</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-success" onclick="openDownloadModal('${fileId}', '${metadata.original_filename}')">
+                        📥 Download
+                    </button>
+                    <button class="btn btn-danger" onclick="confirmDelete('${fileId}', '${metadata.original_filename}')">
+                        🗑️
+                    </button>
+                </div>
+            `;
+            return item;
+        }
+
+        function openDownloadModal(fileId, fileName) {
+            currentFileId = fileId;
+            currentFileName = fileName;
+            document.getElementById('modalFileName').textContent = `File: ${fileName}`;
+            document.getElementById('downloadPassword').value = '';
+            clearFormMessage('downloadStatus');
+            document.getElementById('downloadModal').classList.remove('hidden');
+        }
+
+        function closeDownloadModal() {
+            document.getElementById('downloadModal').classList.add('hidden');
+            currentFileId = null;
+            currentFileName = null;
+        }
+
+        async function performDownload() {
+            const password = document.getElementById('downloadPassword').value;
+            
+            if (!password) {
+                showFormMessage('downloadStatus', 'Please enter password', 'error');
+                return;
+            }
+
+            showFormMessage('downloadStatus', '🔓 Downloading and decrypting...', 'loading');
+
+            try {
+                const result = await downloadFile(currentFileId, password);
+                
+                if (result.status === 200) {
+                    const url = window.URL.createObjectURL(result.blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = result.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showFormMessage('downloadStatus', '✅ File downloaded successfully!', 'success');
+                    showNotification('File downloaded! 🎉', 'success');
+                    
+                    setTimeout(() => {
+                        closeDownloadModal();
+                    }, 2000);
+                } else {
+                    showFormMessage('downloadStatus', `❌ ${result.data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showFormMessage('downloadStatus', `❌ Download failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function confirmDelete(fileId, fileName) {
+            if (!confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const result = await deleteFile(fileId);
+                
+                if (result.status === 200 && result.data.success) {
+                    showNotification('File deleted successfully', 'success');
+                    loadFiles();
+                } else {
+                    showNotification(`Failed to delete: ${result.data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showNotification('Delete failed', 'error');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                clearToken();
+                showNotification('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>
