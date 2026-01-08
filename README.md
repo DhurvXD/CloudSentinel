@@ -2,6 +2,18 @@
 
 A modern, enterprise-grade secure file storage system with Zero-Trust architecture, built with Flask and AWS S3.
 
+## Preview  
+
+![Image](https://github.com/user-attachments/assets/8f014d22-8b36-45ad-85d8-40fa6c43c6ec)
+
+![Image](https://github.com/user-attachments/assets/3d69c1e5-31f5-4063-bfee-6431eaee1e1f)
+
+![Image](https://github.com/user-attachments/assets/0174a55c-97c8-4509-81f6-ef7d8abbe31e)
+
+![Image](https://github.com/user-attachments/assets/202cd172-86ac-4504-8bcc-f6839e2a55b8)
+
+![Image](https://github.com/user-attachments/assets/49c23f6a-b337-4cf4-be46-c797de64ef7a)
+
 ## ✨ Features
 
 ### 🔐 Security Features
